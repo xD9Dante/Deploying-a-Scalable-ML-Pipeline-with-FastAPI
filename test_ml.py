@@ -1,28 +1,67 @@
+from ml.data import process_data
+from ml.model import compute_model_metrics, inference, train_model
+from sklearn.model_selection import train_test_split
 import pytest
-# TODO: add necessary import
+import numpy as np
+import pandas as pd
 
-# TODO: implement the first test. Change the function name and input as needed
-def test_one():
+cat_features = [
+        "workclass",
+        "education",
+        "marital-status",
+        "occupation",
+        "relationship",
+        "race",
+        "sex",
+        "native-country"
+    ]
+
+@pytest.fixture(scope="session")
+def data():
+    # code to load in the data.
+    datapath = "./data/census.csv"
+    return pd.read_csv(datapath)
+
+def test_features_exists(data):
     """
-    # add description for the first test
+    # Test the features that are required for our training model exists in our dataset
     """
-    # Your code here
-    pass
+
+    assert check_features(data, cat_features) == True
 
 
-# TODO: implement the second test. Change the function name and input as needed
-def test_two():
+def test_compute_model_metrics():
     """
-    # add description for the second test
+    # Test the compute_model_metrics method with random array of 0, 1
+    # output should always provide a precision, recall, and fbeta
     """
-    # Your code here
-    pass
+    y_slice = np.random.randint(2, size= 10)
+    preds = np.random.randint(2, size= 10)
+
+    precision, recall, fbeta = compute_model_metrics(y_slice, preds)
+    assert precision is not None
+    assert recall is not None
+    assert fbeta is not None
 
 
-# TODO: implement the third test. Change the function name and input as needed
-def test_three():
+def test_inference(data):
     """
-    # add description for the third test
+    # Test training a model and a prediction from the model will have the same shape
     """
-    # Your code here
-    pass
+    train, test = train_test_split(data,
+                            test_size=0.2,
+                            random_state=42,
+                            stratify=data['salary'])
+
+    X, y, _, _ = process_data(
+        train,
+        categorical_features=cat_features,
+        label="salary",
+        training=True
+    )
+    model = train_model(X, y)
+    y_preds = inference(model, X)
+    assert y.shape == y_preds.shape
+
+def check_features(df, features):
+    return all(feature in df.columns for feature in features)
